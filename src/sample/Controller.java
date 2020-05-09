@@ -6,6 +6,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
+import jdk.internal.dynalink.support.TypeConverterFactory;
 import sample.classes.*;
 import sample.factory.*;
 
@@ -20,7 +21,10 @@ public class Controller {
     ArrayList<WaterFactory> factories = new ArrayList<>(4);
     ArrayList<Water> waterObjects = new ArrayList<>();
 
+    ArrayList<Pair<Pair<Water, Field>, TextField>> allTextFields = new ArrayList<>();
+
     private Boolean isEditing = false;
+    private Water currWater;
 
     @FXML
     private Button btnDelete,
@@ -47,10 +51,10 @@ public class Controller {
     }
 
 
-    public void createFielsForEdit(ScrollPane parentPane, Class water) throws IllegalAccessException, InstantiationException {
+    public void createFielsForEdit(ScrollPane parentPane, Water water) throws IllegalAccessException, InstantiationException {
         // Get types of fields and field objects with reflection
-        Pair<ArrayList<String[]>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water);
-        ArrayList<String[]> fieldsType = fields.getKey();
+        Pair<ArrayList<String>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water.getClass());
+        ArrayList<String> fieldsType = fields.getKey();
         ArrayList<Field> fieldsObj = fields.getValue();
 
         // create pane for space for editing
@@ -68,15 +72,15 @@ public class Controller {
             Label name = new Label(fieldsObj.get(i).getName());
             name.setPrefWidth(70);
 
-            // if not class (and not String) => create TextField, else: create TitledPane ...
+            // if not primitive class (and not String) => create TextField, else: create TitledPane ...
             // ... and recursive invoke for creating TextFields of class
-            if ((!fieldsType.get(i)[0].equals("class")) || (fieldsType.get(i)[fieldsType.get(i).length - 1].equals("java.lang.String"))) {
+            if (utils.isPrimitiveClass(fieldsType.get(i))) {
                 TextField text = new TextField();
                 text.setPrefSize(180, 30);
 
                 // get the value of field
-                Object element = water.newInstance();
-                text.setText(String.valueOf(fieldsObj.get(i).get(element)));
+                text.setText(String.valueOf(fieldsObj.get(i).get(water)));
+                this.allTextFields.add(new Pair<Pair<Water, Field>, TextField>(new Pair<Water, Field>(water, fieldsObj.get(i)), text));
 
                 row.getChildren().add(name);
                 row.getChildren().add(text);
@@ -88,7 +92,7 @@ public class Controller {
                 newTitleClassPane.setText(fieldsObj.get(i).getName());
                 newTitleClassPane.setPrefWidth(300);
 
-                this.createFielsForEdit(newClassPane, fieldsObj.get(i).getType());
+                this.createFielsForEdit(newClassPane, (Water)fieldsObj.get(i).get(water));
 
                 newTitleClassPane.setContent(newClassPane);
 
@@ -126,7 +130,9 @@ public class Controller {
     @FXML
     public void btnDelete_onClick() {
         // deleting object selected from ListView
-        btnDelete.setText("Clicked!");
+        int index = this.lvObjects.getSelectionModel().getSelectedIndex();
+        this.waterObjects.remove(index);
+        this.redrawListView();
     }
 
     public void changeButtonsVisibility() {
@@ -143,15 +149,85 @@ public class Controller {
         }
     }
 
+    public void redrawListView() {
+        this.lvObjects.getItems().clear();
+        for (Water water : this.waterObjects) {
+            this.lvObjects.getItems().add(water.getName());
+        }
+    }
+
     @FXML
     public void btnChangeSave_onClick() throws InstantiationException, IllegalAccessException {
-        // change object selected frov ListView
-        this.changeButtonsVisibility();
+        // change object selected from ListView
         int index = this.lvObjects.getSelectionModel().getSelectedIndex();
-        if ((index >= 0) && (this.isEditing)) {
-            Water waterObj = this.waterObjects.get(index);
-            this.titledPaneForFields.setText(waterObj.getName());
-            this.createFielsForEdit(this.paneForFields, waterObj.getClass());
+        if (index >= 0) {
+            this.changeButtonsVisibility();
+            this.currWater = this.waterObjects.get(index);
+            if (this.isEditing) {
+                this.titledPaneForFields.setText(this.currWater.getName());
+                this.createFielsForEdit(this.paneForFields, this.currWater);
+
+            } else if (!this.isEditing) {
+                for (int i = 0; i < this.allTextFields.size(); i++) {
+                    Pair<Water, Field> fieldWithClass = this.allTextFields.get(i).getKey();
+                    Water classOjb = fieldWithClass.getKey();
+                    Field field = fieldWithClass.getValue();
+
+                    TextField text = this.allTextFields.get(i).getValue();
+                    String textValue = text.getText();
+                    String fieldType = field.getType().getSimpleName();
+
+                    switch (fieldType) {
+                        case "boolean": {
+                            boolean obj = Boolean.parseBoolean(textValue);
+                            field.setBoolean(classOjb, obj);
+                            break;
+                        }
+                        case "char": {
+                            char obj = textValue.charAt(0);
+                            field.setChar(classOjb, obj);
+                            break;
+                        }
+                        case "byte": {
+                            byte obj = Byte.parseByte(textValue);
+                            field.setByte(classOjb, obj);
+                            break;
+                        }
+                        case "short": {
+                            short obj = Short.parseShort(textValue);
+                            field.setShort(classOjb, obj);
+                            break;
+                        }
+                        case "int": {
+                            int obj = Integer.parseInt(textValue);
+                            field.setInt(classOjb, obj);
+                            break;
+                        }
+                        case "long": {
+                            long obj = Long.parseLong(textValue);
+                            field.setLong(classOjb, obj);
+                            break;
+                        }
+                        case "float": {
+                            float obj = Float.parseFloat(textValue);
+                            field.setFloat(classOjb, obj);
+                            break;
+                        }
+                        case "double": {
+                            double obj = Double.parseDouble(textValue);
+                            field.setDouble(classOjb, obj);
+                            break;
+                        }
+                        case "String":
+                            field.set(classOjb, textValue);
+                            break;
+                    }
+
+                }
+                this.allTextFields.clear();
+                this.redrawListView();
+                this.currWater = null;
+            }
         }
     }
 
