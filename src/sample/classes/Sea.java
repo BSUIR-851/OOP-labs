@@ -45,21 +45,6 @@ public class Sea extends Water {
     }
 
     @Override
-    public void setFieldsData(String[] data) {
-        this.setName(data[0]);
-        this.setTemp(Float.parseFloat(data[1]));
-        this.setDepth(Float.parseFloat(data[2]));
-        this.setAmOfStraits(Integer.parseInt(data[3]));
-        this.setAmOfBays(Integer.parseInt(data[4]));
-        longestRiver = this.getLongestRiver();
-        longestRiver.setName(data[5]);
-        longestRiver.setTemp(Float.parseFloat(data[6]));
-        longestRiver.setDepth(Float.parseFloat(data[7]));
-        longestRiver.setLength(Float.parseFloat(data[8]));
-        longestRiver.setVolume(Float.parseFloat(data[9]));
-    }
-
-    @Override
     public String[] getFieldsData() {
         String[] data = new String[10];
         data[0] = this.getName();

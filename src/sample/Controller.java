@@ -3,16 +3,14 @@ package sample;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+
 import javafx.util.Pair;
-import jdk.internal.dynalink.support.TypeConverterFactory;
+
 import sample.classes.*;
 import sample.factory.*;
 
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.input.MouseEvent;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -21,19 +19,14 @@ public class Controller {
     ArrayList<WaterFactory> factories = new ArrayList<>(4);
     ArrayList<Water> waterObjects = new ArrayList<>();
 
-    ArrayList<Pair<Pair<Water, Field>, TextField>> allTextFields = new ArrayList<>();
-
-    private Boolean isEditing = false;
-    private Water currWater;
-
     @FXML
     private Button btnDelete,
-                   btnChangeSave;
+                   btnChange;
     @FXML
     private MenuButton btnAdd;
 
     @FXML
-    private ListView lvObjects;
+    private ListView<String> lvObjects;
 
     @FXML
     private ScrollPane paneForFields;
@@ -42,16 +35,41 @@ public class Controller {
     private TitledPane titledPaneForFields;
 
     @FXML
-    public void initialize() {
+    public void initialize() throws IllegalAccessException {
         // creating all needed factories
         this.factories.add(new SeaFactory());
         this.factories.add(new RiverFactory());
         this.factories.add(new InterIslandSeaFactory());
         this.factories.add(new InlandSeaFactory());
+
+        this.lvObjects.getSelectionModel().selectedItemProperty().addListener(
+            (observable, oldValue, newValue) -> {
+                try {
+                    this.paneForFields.setContent(null);
+                    this.titledPaneForFields.setText("");
+                    int index = this.lvObjects.getSelectionModel().getSelectedIndex();
+                    if (index >= 0) {
+                        Water tempWater = this.waterObjects.get(index);
+                        this.titledPaneForFields.setText(tempWater.getName());
+                        this.showFieldsInfo(this.paneForFields, tempWater);
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        );
     }
 
+    private void alert(String title, String header, String content, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        //alert.initOwner(this.getPrimaryStage());
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
 
-    public void createFielsForEdit(ScrollPane parentPane, Water water) throws IllegalAccessException, InstantiationException {
+    public void showFieldsInfo(ScrollPane parentPane, Water water) throws IllegalAccessException {
         // Get types of fields and field objects with reflection
         Pair<ArrayList<String>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water.getClass());
         ArrayList<String> fieldsType = fields.getKey();
@@ -72,15 +90,11 @@ public class Controller {
             Label name = new Label(fieldsObj.get(i).getName());
             name.setPrefWidth(70);
 
-            // if not primitive class (and not String) => create TextField, else: create TitledPane ...
-            // ... and recursive invoke for creating TextFields of class
+            // if not primitive class (and not String) => create Label, else: create TitledPane ...
+            // ... and recursive invoke for creating Label of class
             if (utils.isPrimitiveClass(fieldsType.get(i))) {
-                TextField text = new TextField();
+                Label text = new Label(String.valueOf(fieldsObj.get(i).get(water)));
                 text.setPrefSize(180, 30);
-
-                // get the value of field
-                text.setText(String.valueOf(fieldsObj.get(i).get(water)));
-                this.allTextFields.add(new Pair<Pair<Water, Field>, TextField>(new Pair<Water, Field>(water, fieldsObj.get(i)), text));
 
                 row.getChildren().add(name);
                 row.getChildren().add(text);
@@ -88,11 +102,13 @@ public class Controller {
             } else {
                 ScrollPane newClassPane = new ScrollPane();
 
+                Water tempWater = (Water) fieldsObj.get(i).get(water);
+
                 TitledPane newTitleClassPane = new TitledPane();
                 newTitleClassPane.setText(fieldsObj.get(i).getName());
-                newTitleClassPane.setPrefWidth(300);
+                newTitleClassPane.setPrefWidth(parentPane.getWidth() - 50);
 
-                this.createFielsForEdit(newClassPane, (Water)fieldsObj.get(i).get(water));
+                this.showFieldsInfo(newClassPane, tempWater);
 
                 newTitleClassPane.setContent(newClassPane);
 
@@ -108,126 +124,72 @@ public class Controller {
         this.lvObjects.getItems().add(water.getName());
     }
 
-    public void createWaterObject(int index) {
+    public void createWaterObject(int index) throws IllegalAccessException, InstantiationException {
         // create selected object
         Water waterObj = this.factories.get(index).Create();
         this.waterObjects.add(waterObj);
         this.addTolvObjects(waterObj);
+        this.lvObjects.getSelectionModel().select(this.lvObjects.getItems().size() - 1);
+        this.btnChange_onClick();
     }
 
     @FXML // create sea
-    public void addSea_onClick() { this.createWaterObject(0); }
+    public void addSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(0); }
 
     @FXML // create river
-    public void addRiver_onClick() { this.createWaterObject(1); }
+    public void addRiver_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(1); }
 
     @FXML // create InterIsland Sea
-    public void addInterIslandSea_onClick() { this.createWaterObject(2); }
+    public void addInterIslandSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(2); }
 
     @FXML // create Inland Sea
-    public void addInlandSea_onClick() { this.createWaterObject(3); }
+    public void addInlandSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(3); }
 
     @FXML
     public void btnDelete_onClick() {
         // deleting object selected from ListView
         int index = this.lvObjects.getSelectionModel().getSelectedIndex();
-        this.waterObjects.remove(index);
-        this.redrawListView();
+        if (index >= 0) {
+            this.waterObjects.remove(index);
+            this.redrawListView();
+        } else {
+            this.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
+        }
     }
 
     public void changeButtonsVisibility() {
         // change visibility of "Add" button, "Delete" button ...
         // ... for edit object selected from ListView
-        this.isEditing = !this.isEditing;
-        this.btnChangeSave.setText(this.isEditing ? "Save" : "Change");
         this.btnAdd.setDisable(!this.btnAdd.isDisabled());
         this.btnDelete.setDisable(!this.btnDelete.isDisabled());
+        this.btnChange.setDisable(!this.btnChange.isDisabled());
         this.lvObjects.setDisable(!this.lvObjects.isDisabled());
-        if (!this.isEditing) {
-            this.paneForFields.setContent(null);
-            this.titledPaneForFields.setText("");
-        }
     }
 
     public void redrawListView() {
         this.lvObjects.getItems().clear();
         for (Water water : this.waterObjects) {
-            this.lvObjects.getItems().add(water.getName());
+            this.addTolvObjects(water);
         }
     }
 
     @FXML
-    public void btnChangeSave_onClick() throws InstantiationException, IllegalAccessException {
+    public void btnChange_onClick() throws InstantiationException, IllegalAccessException {
         // change object selected from ListView
         int index = this.lvObjects.getSelectionModel().getSelectedIndex();
         if (index >= 0) {
             this.changeButtonsVisibility();
-            this.currWater = this.waterObjects.get(index);
-            if (this.isEditing) {
-                this.titledPaneForFields.setText(this.currWater.getName());
-                this.createFielsForEdit(this.paneForFields, this.currWater);
-
-            } else if (!this.isEditing) {
-                for (int i = 0; i < this.allTextFields.size(); i++) {
-                    Pair<Water, Field> fieldWithClass = this.allTextFields.get(i).getKey();
-                    Water classOjb = fieldWithClass.getKey();
-                    Field field = fieldWithClass.getValue();
-
-                    TextField text = this.allTextFields.get(i).getValue();
-                    String textValue = text.getText();
-                    String fieldType = field.getType().getSimpleName();
-
-                    switch (fieldType) {
-                        case "boolean": {
-                            boolean obj = Boolean.parseBoolean(textValue);
-                            field.setBoolean(classOjb, obj);
-                            break;
-                        }
-                        case "char": {
-                            char obj = textValue.charAt(0);
-                            field.setChar(classOjb, obj);
-                            break;
-                        }
-                        case "byte": {
-                            byte obj = Byte.parseByte(textValue);
-                            field.setByte(classOjb, obj);
-                            break;
-                        }
-                        case "short": {
-                            short obj = Short.parseShort(textValue);
-                            field.setShort(classOjb, obj);
-                            break;
-                        }
-                        case "int": {
-                            int obj = Integer.parseInt(textValue);
-                            field.setInt(classOjb, obj);
-                            break;
-                        }
-                        case "long": {
-                            long obj = Long.parseLong(textValue);
-                            field.setLong(classOjb, obj);
-                            break;
-                        }
-                        case "float": {
-                            float obj = Float.parseFloat(textValue);
-                            field.setFloat(classOjb, obj);
-                            break;
-                        }
-                        case "double": {
-                            double obj = Double.parseDouble(textValue);
-                            field.setDouble(classOjb, obj);
-                            break;
-                        }
-                        case "String":
-                            field.set(classOjb, textValue);
-                            break;
-                    }
-
-                }
-                this.allTextFields.clear();
+            Water tempWater = this.waterObjects.get(index);
+            boolean okClicked = utils.showWaterEditDialog(tempWater);
+            if (okClicked) {
+                this.paneForFields.setContent(null);
                 this.redrawListView();
-                this.currWater = null;
+                this.lvObjects.getSelectionModel().select(index);
             }
+            this.changeButtonsVisibility();
+
+        } else {
+            this.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
         }
     }
 

@@ -34,15 +34,6 @@ public class River extends Water {
     }
 
     @Override
-    public void setFieldsData(String[] data) {
-        this.setName(data[0]);
-        this.setTemp(Float.parseFloat(data[1]));
-        this.setDepth(Float.parseFloat(data[2]));
-        this.setLength(Float.parseFloat(data[3]));
-        this.setVolume(Float.parseFloat(data[4]));
-    }
-
-    @Override
     public String[] getFieldsData() {
         String[] data = new String[5];
         data[0] = this.getName();

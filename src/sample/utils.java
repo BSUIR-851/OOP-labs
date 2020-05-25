@@ -1,13 +1,19 @@
 package sample;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Pair;
+import sample.classes.Water;
 
-import java.awt.image.AreaAveragingScaleFilter;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class utils {
-    public static Boolean isPrimitiveClass(String className) {
+    public static boolean isPrimitiveClass(String className) {
         switch (className) {
             case "boolean":
             case "char":
@@ -43,15 +49,30 @@ public class utils {
         return new Pair<ArrayList<String>, ArrayList<Field>>(fieldsType, fields);
     }
 
-    public static ArrayList<String[]> editNameOfFieldsType(ArrayList<String> fields) {
-        ArrayList<String[]> editedFields = new ArrayList<>(fields.size());
-        String[] subName;
-        for (String field: fields) {
-            subName = field.split(" ");
-            editedFields.add(subName);
-        }
+    public static boolean showWaterEditDialog(Water water) {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(Main.class.getResource("WaterEditDialog.fxml"));
+            AnchorPane page = (AnchorPane) loader.load();
 
-        return editedFields;
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Edit " + water.getName());
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            Scene scene = new Scene(page);
+            dialogStage.setScene(scene);
+
+            EditController controller = loader.getController();
+            controller.setDialogStage(dialogStage);
+            controller.setWater(water);
+
+            dialogStage.showAndWait();
+
+            return controller.isOkClicked();
+
+        } catch (IOException | IllegalAccessException | InstantiationException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

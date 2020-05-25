@@ -6,7 +6,6 @@ public abstract class Water {
     public float depth;
 
     public abstract String printInfo();
-    public abstract void setFieldsData(String[] data);
     public abstract String[] getFieldsData();
 
     public String getName() { return this.name; }
