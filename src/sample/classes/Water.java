@@ -1,6 +1,13 @@
 package sample.classes;
 
-public abstract class Water {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.io.Serializable;
+
+public abstract class Water implements Serializable {
+
     public String name;
     public float temp;
     public float depth;

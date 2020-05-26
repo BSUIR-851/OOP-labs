@@ -9,15 +9,17 @@ import javafx.util.Pair;
 
 import sample.classes.*;
 import sample.factory.*;
+import sample.serialize.factories.*;
 
 import javafx.fxml.FXML;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class Controller {
-    ArrayList<WaterFactory> factories = new ArrayList<>(4);
-    ArrayList<Water> waterObjects = new ArrayList<>();
+    private ArrayList<WaterFactory> factories = new ArrayList<>(4);
+    private ArrayList<Water> waterObjects = new ArrayList<>();
 
     @FXML
     private Button btnDelete,
@@ -35,12 +37,20 @@ public class Controller {
     private TitledPane titledPaneForFields;
 
     @FXML
+    private MenuItem mnOpen,
+                     mnSave;
+
+    @FXML
     public void initialize() throws IllegalAccessException {
         // creating all needed factories
         this.factories.add(new SeaFactory());
         this.factories.add(new RiverFactory());
         this.factories.add(new InterIslandSeaFactory());
         this.factories.add(new InlandSeaFactory());
+
+        utils.serFactories.add(new BinSerializatorFactory());
+        utils.serFactories.add(new JsonSerializatorFactory());
+        utils.serFactories.add(new CustomSerializatorFactory());
 
         this.lvObjects.getSelectionModel().selectedItemProperty().addListener(
             (observable, oldValue, newValue) -> {
@@ -60,13 +70,18 @@ public class Controller {
         );
     }
 
-    private void alert(String title, String header, String content, Alert.AlertType type) {
-        Alert alert = new Alert(type);
-        //alert.initOwner(this.getPrimaryStage());
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.showAndWait();
+    @FXML
+    public void miSave_onClick() throws IOException {
+        utils.saveObjects(this.waterObjects, this.paneForFields.getScene().getWindow());
+    }
+
+    @FXML
+    public void miOpen_onClick() {
+        ArrayList<Water> waters = utils.loadObjects();
+        if (waters.size() >= 1) {
+            this.waterObjects = waters;
+            this.redrawListView();
+        }
     }
 
     public void showFieldsInfo(ScrollPane parentPane, Water water) throws IllegalAccessException {
@@ -153,7 +168,7 @@ public class Controller {
             this.waterObjects.remove(index);
             this.redrawListView();
         } else {
-            this.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
+            utils.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
         }
     }
 
@@ -189,7 +204,7 @@ public class Controller {
             this.changeButtonsVisibility();
 
         } else {
-            this.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
+            utils.alert("No Selection", "No water object Selected", "Please select a water object in the table.", Alert.AlertType.WARNING);
         }
     }
 
