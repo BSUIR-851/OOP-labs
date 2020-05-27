@@ -154,7 +154,7 @@ public class utils {
                 Serializator serializator = serFactories.get(serIndex).Create();
                 try {
                     isCorrect = serializator.serializeToFile(file, waterObjects);
-                } catch (IOException e) {
+                } catch (IOException | IllegalAccessException e) {
                     e.printStackTrace();
                     alert("Save error", "Something gone wrong", e.toString(), Alert.AlertType.ERROR);
                 }

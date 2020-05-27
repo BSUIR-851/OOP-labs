@@ -13,7 +13,6 @@ import sample.serialize.factories.*;
 
 import javafx.fxml.FXML;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 

@@ -9,7 +9,6 @@ import javafx.stage.Stage;
 import javafx.util.Pair;
 
 import sample.classes.*;
-import sample.factory.*;
 
 import javafx.fxml.FXML;
 
