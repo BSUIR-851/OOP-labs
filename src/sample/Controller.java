@@ -41,7 +41,7 @@ public class Controller {
                      mnSave;
 
     @FXML
-    public void initialize() throws IllegalAccessException {
+    public void initialize() {
         // creating all needed factories
         this.factories.add(new SeaFactory());
         this.factories.add(new RiverFactory());
@@ -71,7 +71,7 @@ public class Controller {
     }
 
     @FXML
-    public void miSave_onClick() throws IOException {
+    public void miSave_onClick()  {
         utils.saveObjects(this.waterObjects, this.paneForFields.getScene().getWindow());
     }
 
@@ -139,7 +139,7 @@ public class Controller {
         this.lvObjects.getItems().add(water.getName());
     }
 
-    public void createWaterObject(int index) throws IllegalAccessException, InstantiationException {
+    public void createWaterObject(int index) {
         // create selected object
         Water waterObj = this.factories.get(index).Create();
         this.waterObjects.add(waterObj);
@@ -149,16 +149,16 @@ public class Controller {
     }
 
     @FXML // create sea
-    public void addSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(0); }
+    public void addSea_onClick() { this.createWaterObject(0); }
 
     @FXML // create river
-    public void addRiver_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(1); }
+    public void addRiver_onClick() { this.createWaterObject(1); }
 
     @FXML // create InterIsland Sea
-    public void addInterIslandSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(2); }
+    public void addInterIslandSea_onClick() { this.createWaterObject(2); }
 
     @FXML // create Inland Sea
-    public void addInlandSea_onClick() throws InstantiationException, IllegalAccessException { this.createWaterObject(3); }
+    public void addInlandSea_onClick() { this.createWaterObject(3); }
 
     @FXML
     public void btnDelete_onClick() {
@@ -189,7 +189,7 @@ public class Controller {
     }
 
     @FXML
-    public void btnChange_onClick() throws InstantiationException, IllegalAccessException {
+    public void btnChange_onClick() {
         // change object selected from ListView
         int index = this.lvObjects.getSelectionModel().getSelectedIndex();
         if (index >= 0) {

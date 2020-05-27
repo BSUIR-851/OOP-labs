@@ -109,21 +109,69 @@ public class utils {
         FileChooser fileChooser = getFileChooser("Open file");
         File file = fileChooser.showOpenDialog(new Stage());
         if (file != null) {
-            Serializator serializator = serFactories.get(1).Create();
-            waters = serializator.deserializeFromFile(file);
+            String extension = getFileExtension(file);
+            int serIndex = -1;
+            switch (extension) {
+                case "bin":
+                    serIndex = 0;
+                    break;
+                case "json":
+                    serIndex = 1;
+                    break;
+                case "txt":
+                    serIndex = 2;
+                    break;
+            }
+            if (serIndex >= 0) {
+                Serializator serializator = serFactories.get(serIndex).Create();
+                waters = serializator.deserializeFromFile(file);
+            } else {
+                alert("Open error", "Incorrect file path", "Choose correct file!", Alert.AlertType.ERROR);
+            }
         }
         return waters;
     }
 
-    public static boolean saveObjects(ArrayList<Water> waterObjects, Window window) throws IOException {
+    public static boolean saveObjects(ArrayList<Water> waterObjects, Window window) {
         boolean isCorrect = false;
         FileChooser fileChooser = getFileChooser("Save file");
         File file = fileChooser.showSaveDialog(window);
         if (file != null) {
-            Serializator serializator = serFactories.get(1).Create();
-            isCorrect = serializator.serializeToFile(file, waterObjects);
+            String extension = getFileExtension(file);
+            int serIndex = -1;
+            switch (extension) {
+                case "bin":
+                    serIndex = 0;
+                    break;
+                case "json":
+                    serIndex = 1;
+                    break;
+                case "txt":
+                    serIndex = 2;
+                    break;
+            }
+            if (serIndex >= 0) {
+                Serializator serializator = serFactories.get(serIndex).Create();
+                try {
+                    isCorrect = serializator.serializeToFile(file, waterObjects);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    alert("Save error", "Something gone wrong", e.toString(), Alert.AlertType.ERROR);
+                }
+            } else {
+                alert("Save error", "Incorrect file path", "Choose correct file!", Alert.AlertType.ERROR);
+            }
         }
         return isCorrect;
+    }
+
+    private static String getFileExtension(File file) {
+        String fileName = file.getName();
+        String extension = "";
+        if (fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0) {
+            extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+        }
+        return extension;
     }
 
 }
