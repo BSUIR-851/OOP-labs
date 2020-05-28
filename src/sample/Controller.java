@@ -22,7 +22,7 @@ public class Controller {
 
     @FXML
     private Button btnDelete,
-                   btnChange;
+                   btnEdit;
     @FXML
     private MenuButton btnAdd;
 
@@ -41,16 +41,18 @@ public class Controller {
 
     @FXML
     public void initialize() {
-        // creating all needed factories
+        // creating all needed water factories
         this.factories.add(new SeaFactory());
         this.factories.add(new RiverFactory());
         this.factories.add(new InterIslandSeaFactory());
         this.factories.add(new InlandSeaFactory());
 
+        // created all needed serializer factories
         utils.serFactories.add(new BinSerializatorFactory());
         utils.serFactories.add(new JsonSerializatorFactory());
         utils.serFactories.add(new CustomSerializatorFactory());
 
+        // set listener for changing selected index of listview with created objects
         this.lvObjects.getSelectionModel().selectedItemProperty().addListener(
             (observable, oldValue, newValue) -> {
                 try {
@@ -71,11 +73,13 @@ public class Controller {
 
     @FXML
     public void miSave_onClick()  {
-        utils.saveObjects(this.waterObjects, this.paneForFields.getScene().getWindow());
+        // save objects to file (serialize)
+        utils.saveObjects(this.waterObjects);
     }
 
     @FXML
     public void miOpen_onClick() {
+        // load objects from file (deserialize)
         ArrayList<Water> waters = utils.loadObjects();
         if (waters.size() >= 1) {
             this.waterObjects = waters;
@@ -144,7 +148,7 @@ public class Controller {
         this.waterObjects.add(waterObj);
         this.addTolvObjects(waterObj);
         this.lvObjects.getSelectionModel().select(this.lvObjects.getItems().size() - 1);
-        this.btnChange_onClick();
+        this.btnEdit_onClick();
     }
 
     @FXML // create sea
@@ -176,7 +180,7 @@ public class Controller {
         // ... for edit object selected from ListView
         this.btnAdd.setDisable(!this.btnAdd.isDisabled());
         this.btnDelete.setDisable(!this.btnDelete.isDisabled());
-        this.btnChange.setDisable(!this.btnChange.isDisabled());
+        this.btnEdit.setDisable(!this.btnEdit.isDisabled());
         this.lvObjects.setDisable(!this.lvObjects.isDisabled());
     }
 
@@ -188,8 +192,8 @@ public class Controller {
     }
 
     @FXML
-    public void btnChange_onClick() {
-        // change object selected from ListView
+    public void btnEdit_onClick() {
+        // edit object selected from ListView
         int index = this.lvObjects.getSelectionModel().getSelectedIndex();
         if (index >= 0) {
             this.changeButtonsVisibility();

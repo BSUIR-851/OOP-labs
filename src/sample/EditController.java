@@ -14,6 +14,7 @@ import javafx.fxml.FXML;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 
 public class EditController {
@@ -33,17 +34,17 @@ public class EditController {
         this.dialogStage = dialogStage;
     }
 
-    public boolean isOkClicked() {
-        return this.okClicked;
-    }
+    public boolean isOkClicked() { return this.okClicked; }
 
     public void setWater(Water water) throws InstantiationException, IllegalAccessException {
+        // create fields for edit water objects on edit form
         this.water = water;
         this.createFielsForEdit(paneForFields, water);
     }
 
     @FXML
     public void btnOk_onClick() throws IllegalAccessException {
+        // save water object fields and then close edit window
         if (this.isCorrectFields()) {
             for (Pair<Pair<Water, Field>, TextField> allTextField : this.allTextFields) {
                 Pair<Water, Field> fieldWithClass = allTextField.getKey();
@@ -52,39 +53,16 @@ public class EditController {
 
                 TextField text = allTextField.getValue();
                 String textValue = text.getText();
-                Class fieldType = field.getType();
 
-                if (fieldType == boolean.class) {
-                    boolean obj = Boolean.parseBoolean(textValue);
-                    field.setBoolean(classOjb, obj);
-                } else if (fieldType == char.class) {
-                    char obj = textValue.charAt(0);
-                    field.setChar(classOjb, obj);
-                } else if (fieldType == byte.class) {
-                    byte obj = Byte.parseByte(textValue);
-                    field.setByte(classOjb, obj);
-                } else if (fieldType == short.class) {
-                    short obj = Short.parseShort(textValue);
-                    field.setShort(classOjb, obj);
-                } else if (fieldType == int.class) {
-                    int obj = Integer.parseInt(textValue);
-                    field.setInt(classOjb, obj);
-                } else if (fieldType == long.class) {
-                    long obj = Long.parseLong(textValue);
-                    field.setLong(classOjb, obj);
-                } else if (fieldType == float.class) {
-                    float obj = Float.parseFloat(textValue);
-                    field.setFloat(classOjb, obj);
-                } else if (fieldType == double.class) {
-                    double obj = Double.parseDouble(textValue);
-                    field.setDouble(classOjb, obj);
-                } else if (fieldType == String.class) {
-                    field.set(classOjb, textValue);
-                }
+                classOjb = utils.setFieldValue(classOjb, field, textValue);
+
             }
             this.allTextFields.clear();
             this.okClicked = true;
             dialogStage.close();
+
+        } else {
+            utils.alert("Edit error", "Incorrect input!", "Please, chech your input data", Alert.AlertType.ERROR);
         }
     }
 
@@ -94,13 +72,24 @@ public class EditController {
     }
 
     public boolean isCorrectFields() {
-        return true;
+        // check if all fields is correct
+        boolean result = true;
+        for (Pair<Pair<Water, Field>, TextField> allTextField : this.allTextFields) {
+            TextField text = allTextField.getValue();
+            String textValue = text.getText();
+            if ((textValue == null) || textValue.length() == 0) {
+                result = false;
+                break;
+            }
+        }
+        return result;
     }
 
     public void btnEdit_onClick(Water water) {
+        // open edit aggregated object
         boolean okClicked = utils.showWaterEditDialog(water);
-
     }
+
     public void createFielsForEdit(ScrollPane parentPane, Water water) throws IllegalAccessException, InstantiationException {
         // Get types of fields and field objects with reflection
         Pair<ArrayList<String>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water.getClass());

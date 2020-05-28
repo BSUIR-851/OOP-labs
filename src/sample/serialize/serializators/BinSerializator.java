@@ -8,6 +8,7 @@ import java.util.ArrayList;
 public class BinSerializator extends Serializator {
 
     public boolean serializeToFile(File file, ArrayList<Water> waterObjects) throws IOException {
+        // binary serialize list of objects
         boolean isCorrect = false;
 
         ObjectOutputStream oos = null;
@@ -39,6 +40,7 @@ public class BinSerializator extends Serializator {
     }
 
     public ArrayList<Water> deserializeFromFile(File file) {
+        // init list for deserialized objects
         ArrayList<Water> waters = new ArrayList<>();
 
         ObjectInputStream ois = null;
