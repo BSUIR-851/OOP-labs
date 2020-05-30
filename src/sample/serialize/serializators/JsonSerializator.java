@@ -1,75 +1,83 @@
 package sample.serialize.serializators;
 
+import com.Plugin.Plugin;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
 import sample.classes.Water;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 
 public class JsonSerializator extends Serializator {
-    public boolean serializeToFile(File file, ArrayList<Water> waterObjects) {
+    public boolean serializeToFile(File file, ArrayList<Water> waterObjects, Plugin plugin, String key)
+            throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException,
+            NoSuchAlgorithmException, NoSuchPaddingException {
         // serialize list of objects with JSON format
         boolean isCorrect = false;
-        try {
-            FileOutputStream fos = new FileOutputStream(file);
+        FileOutputStream fos = new FileOutputStream(file);
 
-            if (fos != null) {
-                // USE: gson-2.8.6
-                // create json builder to serialize
-                GsonBuilder builder = new GsonBuilder();
-                builder.registerTypeAdapter(Water.class, new InterfaceAdapter());
-                Gson gson = builder.create();
+        if (fos != null) {
+            // USE: gson-2.8.6
+            // create json builder to serialize
+            GsonBuilder builder = new GsonBuilder();
+            builder.registerTypeAdapter(Water.class, new InterfaceAdapter());
+            Gson gson = builder.create();
 
-                // get type token of list objects
-                Type typeToken = new TypeToken<java.util.List<Water>>(){}.getType();
+            // get type token of list objects
+            Type typeToken = new TypeToken<java.util.List<Water>>(){}.getType();
 
-                // write string representation of object to file
-                fos.write(gson.toJson(waterObjects, typeToken).getBytes());
+            // write string representation of object to file
+            byte[] objects = gson.toJson(waterObjects, typeToken).getBytes();
 
-                isCorrect = true;
-                fos.close();
+            // encrypt objects if choosed to encrypt
+            if (plugin != null) {
+                objects = plugin.encrypt(objects, key);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            fos.write(objects);
+            isCorrect = true;
+            fos.close();
         }
 
         return isCorrect;
     }
 
-    public ArrayList<Water> deserializeFromFile(File file) {
+    public ArrayList<Water> deserializeFromFile(File file, Plugin plugin, String key)
+            throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException,
+            NoSuchAlgorithmException, NoSuchPaddingException {
         // init list for deserialized objects
         ArrayList<Water> waters = new ArrayList<>();
+        FileInputStream fis = new FileInputStream(file);
+        if (fis != null) {
+            // USE: gson-2.8.6
+            // create json builder to deserialize
+            GsonBuilder builder = new GsonBuilder();
+            builder.registerTypeAdapter(Water.class, new InterfaceAdapter());
+            Gson gson = builder.create();
 
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            if (fis != null) {
-                // USE: gson-2.8.6
-                // create json builder to deserialize
-                GsonBuilder builder = new GsonBuilder();
-                builder.registerTypeAdapter(Water.class, new InterfaceAdapter());
-                Gson gson = builder.create();
+            // get type token of list objects
+            Type typeToken = new TypeToken<java.util.List<Water>>(){}.getType();
 
-                // get type token of list objects
-                Type typeToken = new TypeToken<java.util.List<Water>>(){}.getType();
+            // read all data from serialized file
+            byte[] data = new byte[(int) file.length()];
+            fis.read(data);
 
-                // read all data from serialized file
-                byte[] data = new byte[(int) file.length()];
-                fis.read(data);
-                waters.addAll(gson.fromJson(new String(data, StandardCharsets.UTF_8), typeToken));
-
-                fis.close();
+            // decrypt objects if choosed to decrypt
+            if (plugin != null) {
+                data = plugin.decrypt(data, key);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            waters.addAll(gson.fromJson(new String(data, StandardCharsets.UTF_8), typeToken));
+
+            fis.close();
         }
 
         return waters;

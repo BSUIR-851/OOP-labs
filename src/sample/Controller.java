@@ -1,5 +1,7 @@
 package sample;
 
+import com.Plugin.Plugin;
+
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -19,6 +21,9 @@ import java.util.ArrayList;
 public class Controller {
     private ArrayList<WaterFactory> factories = new ArrayList<>(4);
     private ArrayList<Water> waterObjects = new ArrayList<>();
+
+    private ArrayList<Plugin> plugins;
+    private ArrayList<String> pluginNames;
 
     @FXML
     private Button btnDelete,
@@ -40,6 +45,12 @@ public class Controller {
                      mnSave;
 
     @FXML
+    private ComboBox<String> cbPlugins;
+
+    @FXML
+    private TextField tfKey;
+
+    @FXML
     public void initialize() {
         // creating all needed water factories
         this.factories.add(new SeaFactory());
@@ -51,6 +62,16 @@ public class Controller {
         utils.serFactories.add(new BinSerializatorFactory());
         utils.serFactories.add(new JsonSerializatorFactory());
         utils.serFactories.add(new CustomSerializatorFactory());
+
+        // load all plugins
+        Pair<ArrayList<Plugin>, ArrayList<String>> pluginsAndNames = utils.loadPlugins("plugins");
+        this.plugins = pluginsAndNames.getKey();
+        this.pluginNames = pluginsAndNames.getValue();
+
+        // set names of all plugins to combobox
+        this.cbPlugins.getItems().add("None");
+        this.cbPlugins.getItems().addAll(this.pluginNames);
+        this.cbPlugins.getSelectionModel().select(0);
 
         // set listener for changing selected index of listview with created objects
         this.lvObjects.getSelectionModel().selectedItemProperty().addListener(
@@ -74,13 +95,30 @@ public class Controller {
     @FXML
     public void miSave_onClick()  {
         // save objects to file (serialize)
-        utils.saveObjects(this.waterObjects);
+
+        // get selected plugin
+        int pluginIndex = this.cbPlugins.getSelectionModel().getSelectedIndex();
+        Plugin tempPlugin = this.plugins.get(pluginIndex);
+
+        // get entered key
+        String key = this.tfKey.getText();
+
+        utils.saveObjects(this.waterObjects, tempPlugin, key);
     }
 
     @FXML
     public void miOpen_onClick() {
         // load objects from file (deserialize)
-        ArrayList<Water> waters = utils.loadObjects();
+
+        // get selected plugin
+        int pluginIndex = this.cbPlugins.getSelectionModel().getSelectedIndex();
+        Plugin tempPlugin = this.plugins.get(pluginIndex);
+
+        // get entered key
+        String key = this.tfKey.getText();
+        ArrayList<Water> waters = utils.loadObjects(tempPlugin, key);
+
+        // set deserialized objects and redraw table to display them
         if (waters.size() >= 1) {
             this.waterObjects = waters;
             this.redrawListView();

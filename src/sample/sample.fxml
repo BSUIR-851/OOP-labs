@@ -3,6 +3,8 @@
 <?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -10,12 +12,13 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.Pane?>
 
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
    <children>
-      <ListView fx:id="lvObjects" layoutX="375.0" layoutY="35.0" prefHeight="480.0" prefWidth="360.0">
+      <ListView fx:id="lvObjects" layoutX="375.0" layoutY="35.0" prefHeight="438.0" prefWidth="360.0">
          <cursor>
             <Cursor fx:constant="HAND" />
          </cursor></ListView>
@@ -29,7 +32,7 @@
             </ScrollPane>
          </content>
       </TitledPane>
-      <ButtonBar layoutX="5.0" layoutY="480.0" prefHeight="40.0" prefWidth="345.0">
+      <ButtonBar layoutX="375.0" layoutY="480.0" prefHeight="40.0" prefWidth="345.0">
          <buttons>
             <MenuButton fx:id="btnAdd" mnemonicParsing="false" prefHeight="30.0" prefWidth="100.0" text="Add">
               <items>
@@ -52,5 +55,12 @@
                </items></Menu>
         </menus>
       </MenuBar>
+      <ButtonBar layoutX="14.0" layoutY="480.0" prefHeight="40.0" prefWidth="345.0">
+         <buttons>
+            <Label fx:id="lbCrypt" maxWidth="15.0" minWidth="13.0" prefHeight="17.0" prefWidth="15.0" text="Crypt:" />
+            <ComboBox fx:id="cbPlugins" prefWidth="200.0" promptText="None" />
+            <TextField fx:id="tfKey" promptText="Enter key..." />
+         </buttons>
+      </ButtonBar>
    </children>
 </Pane>

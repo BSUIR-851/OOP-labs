@@ -1,5 +1,7 @@
 package sample;
 
+import com.Plugin.Plugin;
+
 import sample.classes.Water;
 import sample.serialize.factories.*;
 
@@ -14,14 +16,57 @@ import javafx.util.Pair;
 
 import sample.serialize.serializators.Serializator;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URLClassLoader;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+
+import java.net.URL;
 
 public class utils {
     // declare list for serializers
     public static ArrayList<SerializatorFactory> serFactories = new ArrayList<>(3);
+
+    public static Pair<ArrayList<Plugin>, ArrayList<String>> loadPlugins(String path) {
+        // init list for loaded plugins
+        ArrayList<Plugin> plugins = new ArrayList<>();
+
+        // first plugin is always null
+        plugins.add(null);
+        ArrayList<String> pluginNames = new ArrayList<>();
+
+        // init file with plugin's directory
+        File dirWithPlugins = new File(path);
+
+        // get all files with jar extension
+        File[] jarPlugins = dirWithPlugins.listFiles(
+            file -> file.isFile() && file.getName().endsWith(".jar")
+        );
+
+        if (jarPlugins != null) {
+            for (File jarPlugin : jarPlugins) {
+                try {
+                    URL jarURL = jarPlugin.toURI().toURL();
+                    URLClassLoader classLoader = new URLClassLoader(new URL[]{jarURL});
+                    Class pluginClass = classLoader.loadClass("com.crypt.cryptLogic");
+                    Plugin loadedPlugin = (Plugin) pluginClass.newInstance();
+                    plugins.add(loadedPlugin);
+                    pluginNames.add(loadedPlugin.getPluginName());
+                } catch (MalformedURLException | ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    e.printStackTrace();
+                    alert("Load error", "Something gone wrong", e.toString(), Alert.AlertType.ERROR);
+                }
+            }
+        }
+        return new Pair<ArrayList<Plugin>, ArrayList<String>>(plugins, pluginNames);
+    }
 
     public static boolean isPrimitiveClass(String className) {
         // check if class is primitive
@@ -155,7 +200,7 @@ public class utils {
         return fileChooser;
     }
 
-    public static ArrayList<Water> loadObjects() {
+    public static ArrayList<Water> loadObjects(Plugin plugin, String key) {
         // load objects from file (deserialize)
 
         // init list for deserialized objects
@@ -185,7 +230,15 @@ public class utils {
                 // get certain serializer from factory
                 Serializator serializator = serFactories.get(serIndex).Create();
                 // start deserializing
-                waters = serializator.deserializeFromFile(file);
+                try {
+                    waters = serializator.deserializeFromFile(file, plugin, key);
+                } catch (IOException | InvalidKeyException | IllegalBlockSizeException |
+                        BadPaddingException | NoSuchAlgorithmException | NoSuchPaddingException |
+                        ClassNotFoundException | NoSuchFieldException | InstantiationException |
+                        IllegalAccessException e) {
+                    e.printStackTrace();
+                    alert("Open error", "Something gone wrong", e.toString(), Alert.AlertType.ERROR);
+                }
             } else {
                 alert("Open error", "Incorrect file path", "Choose correct file!", Alert.AlertType.ERROR);
             }
@@ -193,7 +246,7 @@ public class utils {
         return waters;
     }
 
-    public static boolean saveObjects(ArrayList<Water> waterObjects) {
+    public static boolean saveObjects(ArrayList<Water> waterObjects, Plugin plugin, String key) {
         // save objects to file (serialize)
 
         boolean isCorrect = false;
@@ -222,8 +275,9 @@ public class utils {
                 Serializator serializator = serFactories.get(serIndex).Create();
                 // start serializing
                 try {
-                    isCorrect = serializator.serializeToFile(file, waterObjects);
-                } catch (IOException | IllegalAccessException e) {
+                    isCorrect = serializator.serializeToFile(file, waterObjects, plugin, key);
+                } catch (IOException | IllegalAccessException | NoSuchPaddingException | NoSuchAlgorithmException |
+                        InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                     e.printStackTrace();
                     alert("Save error", "Something gone wrong", e.toString(), Alert.AlertType.ERROR);
                 }

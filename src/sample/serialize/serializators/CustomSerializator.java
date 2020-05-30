@@ -1,38 +1,46 @@
 package sample.serialize.serializators;
 
+import com.Plugin.Plugin;
 import javafx.util.Pair;
 import sample.classes.Water;
 import sample.utils;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class CustomSerializator extends Serializator {
-    public boolean serializeToFile(File file, ArrayList<Water> waterObjects) throws IllegalAccessException {
+    public boolean serializeToFile(File file, ArrayList<Water> waterObjects, Plugin plugin, String key)
+            throws IllegalAccessException, NoSuchPaddingException, NoSuchAlgorithmException,
+            InvalidKeyException, BadPaddingException, IllegalBlockSizeException, IOException {
         // serialize list of objects in textfile
         boolean isCorrect = false;
-        try {
-            FileOutputStream fos = new FileOutputStream(file);
-            String serObject;
-            if (fos != null) {
-                for (Water water: waterObjects) {
-                    Pair<ArrayList<String>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water.getClass());
-                    ArrayList<String> fieldsType = fields.getKey();
-                    ArrayList<Field> fieldsObj = fields.getValue();
+        FileOutputStream fos = new FileOutputStream(file);
+        String serObjects = "";
+        if (fos != null) {
+            for (Water water: waterObjects) {
+                Pair<ArrayList<String>, ArrayList<Field>> fields = utils.getAllDeclaredFields(water.getClass());
+                ArrayList<String> fieldsType = fields.getKey();
+                ArrayList<Field> fieldsObj = fields.getValue();
 
-                    serObject = ";" + this.getStringFields(fieldsObj, water) + ";";
-                    fos.write(serObject.getBytes());
-                }
-                isCorrect = true;
-                fos.close();
+                serObjects += ";" + this.getStringFields(fieldsObj, water) + ";";
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            byte[] objects = serObjects.getBytes();
+
+            // encrypt object if choosed to encrypt
+            if (plugin != null) {
+                objects = plugin.encrypt(objects, key);
+            }
+            fos.write(objects);
+            isCorrect = true;
+            fos.close();
         }
         return isCorrect;
     }
@@ -56,38 +64,33 @@ public class CustomSerializator extends Serializator {
         return strFields;
     }
 
-    public ArrayList<Water> deserializeFromFile(File file) {
+    public ArrayList<Water> deserializeFromFile(File file, Plugin plugin, String key)
+            throws IOException, ClassNotFoundException, NoSuchFieldException, InstantiationException,
+            IllegalAccessException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException,
+            NoSuchAlgorithmException, NoSuchPaddingException {
         // init list for deserialized objects
         ArrayList<Water> waters = new ArrayList<>();
+        FileInputStream fis = new FileInputStream(file);
+        if (fis != null) {
+            // read all serialized data from file
+            byte[] data = new byte[(int) file.length()];
+            fis.read(data);
 
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            if (fis != null) {
-                // read all serialized data from file
-                byte[] data = new byte[(int) file.length()];
-                fis.read(data);
-                String serObjects = new String(data, StandardCharsets.UTF_8);
-
-                // start deserializing
-                StringTokenizer st = new StringTokenizer(serObjects, ";;");
-                Pair<Water, Integer> tempWaterAndInd;
-                while (st.hasMoreTokens()) {
-                    String obj = st.nextToken();
-                    tempWaterAndInd = this.getObjectFromStr(obj, 0);
-                    waters.add(tempWaterAndInd.getKey());
-                }
-                fis.close();
+            // decrypt objects if choosed to decrypt
+            if (plugin != null) {
+                data = plugin.decrypt(data, key);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            String serObjects = new String(data, StandardCharsets.UTF_8);
+
+            // start deserializing
+            StringTokenizer st = new StringTokenizer(serObjects, ";;");
+            Pair<Water, Integer> tempWaterAndInd;
+            while (st.hasMoreTokens()) {
+                String obj = st.nextToken();
+                tempWaterAndInd = this.getObjectFromStr(obj, 0);
+                waters.add(tempWaterAndInd.getKey());
+            }
+            fis.close();
         }
         return waters;
     }
