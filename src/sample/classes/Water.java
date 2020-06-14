@@ -8,9 +8,6 @@ public abstract class Water implements Serializable {
     public float temp;
     public float depth;
 
-    public abstract String printInfo();
-    public abstract String[] getFieldsData();
-
     public String getName() { return this.name; }
     public void setName(String name) { this.name = name; }
 
